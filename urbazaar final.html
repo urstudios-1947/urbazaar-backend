@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UrStudios Production - UrBazaar</title>
+    <meta name="google-site-verification" content="DZ5LaN4Qtdr5aX4PWkDAsVL0jJxoKtWP0koOFbwyM-g" />
+
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        * { margin: 0; padding: 0; font-family: '-apple-system', BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif; }
+        :root {
+            --bg-base: #09090b; 
+            --bg-surface: #121215;
+            --border-color: #27272a; 
+            --brand-green: #22c55e; 
+            --brand-green-dark: #16a34a;
+        }
+        html { scroll-behavior: smooth; }
+        body { background-color: var(--bg-base); color: #ffffff; min-height: 100vh; overflow-x: hidden; display: flex; flex-direction: column; }
+        
+        .app-view { display: none; flex: 1; flex-direction: column; }
+        .app-view.active-view { display: flex; }
+
+        /* PRE-INTRO SCREEN */
+        .pre-intro-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000000; z-index: 999999;
+            display: flex; align-items: center; justify-content: center;
+            animation: flashBurstOut 0.8s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+            animation-delay: 2.2s;
+        }
+
+        .neon-stretch-line {
+            position: absolute; width: 0%; height: 2px;
+            background: var(--brand-green);
+            box-shadow: 0 0 20px var(--brand-green), 0 0 40px var(--brand-green);
+            animation: lineExpand 1.2s cubic-bezier(0.85, 0, 0.15, 1) forwards;
+            animation-delay: 0.3s;
+        }
+
+        .neon-pulse-dot {
+            width: 6px; height: 6px; background: #FFF; border-radius: 50%;
+            box-shadow: 0 0 15px #FFF, 0 0 30px var(--brand-green);
+            opacity: 0; transform: scale(0);
+            animation: dotPop 0.5s ease forwards;
+            animation-delay: 0.1s;
+        }
+
+        @keyframes dotPop {
+            0% { opacity: 0; transform: scale(0); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes lineExpand {
+            0% { width: 0%; height: 2px; }
+            70% { width: 100%; height: 2px; opacity: 1; }
+            100% { width: 100%; height: 100%; opacity: 1; background: #FFFFFF; }
+        }
+
+        @keyframes flashBurstOut {
+            0% { opacity: 1; transform: scale(1); filter: invert(0); }
+            99% { opacity: 0; transform: scale(1.1); display: none; }
+            100% { opacity: 0; visibility: hidden; pointer-events: none; }
+        }
+
+        /* INTRO SCREEN */
+        .intro-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #FFFFFF; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 99999;
+            animation: introScreenFade 0.8s cubic-bezier(0.85, 0, 0.15, 1) forwards;
+            animation-delay: 6.8s;
+            pointer-events: none;
+        }
+
+        @keyframes introScreenFade {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-100%); visibility: hidden; }
+        }
+        
+        .ring-container {
+            position: absolute; width: 320px; height: 320px;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        .outer-spinning-ring {
+            position: absolute; width: 100%; height: 100%;
+            border: 2px solid transparent; border-top-color: var(--brand-green); border-bottom-color: var(--brand-green);
+            border-radius: 50%; opacity: 0;
+            animation: ringSpinOuter 4.5s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
+            animation-delay: 2.1s;
+        }
+
+        .inner-scanning-ring {
+            position: absolute; width: 80%; height: 80%;
+            border: 1.5px dashed #16a34a;
+            border-radius: 50%; opacity: 0;
+            animation: ringSpinInner 4.2s cubic-bezier(0.15, 0.7, 0.3, 1) forwards;
+            animation-delay: 2.4s;
+        }
+
+        @keyframes ringSpinOuter {
+            0% { transform: scale(2.2) rotate(0deg); opacity: 0.9; }
+            70% { transform: scale(0.95) rotate(360deg); opacity: 0.4; }
+            100% { transform: scale(1) rotate(540deg); opacity: 0; }
+        }
+
+        @keyframes ringSpinInner {
+            0% { transform: scale(0) rotate(360deg); opacity: 0.8; }
+            75% { transform: scale(1.05) rotate(-180deg); opacity: 0.3; }
+            100% { transform: scale(1) rotate(-360deg); opacity: 0; }
+        }
+
+        .logo-burst {
+            display: flex; flex-direction: column; align-items: center;
+            opacity: 0; transform: scale(0.8);
+            animation: logoFadeIn 2.8s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+            animation-delay: 3.5s; 
+        }
+
+        @keyframes logoFadeIn {
+            0% { opacity: 0; transform: scale(0.8); filter: blur(6px); }
+            30%, 85% { opacity: 1; transform: scale(1); filter: blur(0px); }
+            100% { opacity: 0; transform: scale(1.08); filter: blur(4px); }
+        }
+
+        /* 100% FULLSCREEN WHITE RICKSHAW LOADING SCREEN */
+        #urbazaar-loader-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999;
+            background: #FFFFFF; display: none; flex-direction: column; align-items: center; justify-content: center;
+            overflow: hidden; direction: rtl; margin: 0; padding: 0;
+        }
+
+        .ub-loading-heading {
+            position: absolute; top: 0; left: 0; width: 100%;
+            font-size: 55px; font-weight: 900; color: #0F172A; text-align: center;
+            padding: 30px 0; background: #ffffff; border-bottom: 1px solid #f1f5f9;
+            direction: ltr; box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+        }
+
+        .ub-loading-heading span { color: #22c55e; }
+        
+        .ub-content-middle { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100vw; height: 100vh; gap: 20px; padding: 0 40px; position: absolute; }
+        
+        .ub-rickshaw-container { width: 100vw; height: 150px; position: relative; overflow: hidden; }
+        .ub-rickshaw { 
+            position: absolute; font-size: 130px; 
+            animation: drive 3.5s linear forwards; 
+            white-space: nowrap; transform: scaleX(-1); bottom: 0; 
+        }
+        @keyframes drive { 0% { left: -220px; } 100% { left: 100vw; } }
+        
+        #ub-sabr-text { font-size: 34px; font-weight: 900; color: #000000; margin-top: 5px; }
+        
+        .ub-loader-box { 
+            width: calc(100vw - 80px); max-width: 1100px; height: 16px; 
+            background: #F1F5F9; border: 1px solid #E2E8F0; border-radius: 20px; 
+            overflow: hidden; direction: ltr; margin-top: 15px; 
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.04);
+        }
+        .ub-progress { width: 0%; height: 100%; background: #22c55e; border-radius: 20px; animation: load 3.5s linear forwards; }
+        @keyframes load { 0% { width: 0%; } 100% { width: 100%; } }
+
+        /* ROLE SELECTION PAGE STYLES */
+        #page-role-select {
+            display: none; flex: 1; align-items: center; justify-content: center; min-height: 100vh;
+            background: radial-gradient(circle at center, #ffffff 0%, #f1f5f9 100%);
+            padding: 40px;
+        }
+        #page-role-select.active { display: flex; }
+        
+        .role-selection-container { max-width: 900px; width: 100%; text-align: center; }
+        .role-selection-container h1 { font-size: 42px; font-weight: 900; color: #0f172a; margin-bottom: 12px; }
+        .role-selection-container h1 span { color: #22c55e; }
+        .role-selection-container p { font-size: 16px; color: #64748b; margin-bottom: 40px; }
+
+        .role-cards-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+
+        .role-card {
+            background: #ffffff; border: 2px solid #e2e8f0; border-radius: 20px; padding: 45px 25px;
+            text-align: center; cursor: pointer; transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.03); position: relative; overflow: hidden;
+        }
+
+        .role-card.unlocked:hover {
+            border-color: #22c55e; transform: translateY(-6px);
+            box-shadow: 0 20px 40px rgba(34, 197, 94, 0.12);
+        }
+
+        .role-card.locked {
+            background: #f8fafc; border-color: #e2e8f0; cursor: not-allowed; opacity: 0.6;
+        }
+
+        .role-card h3 { font-size: 26px; font-weight: 900; color: #0f172a; }
+        .role-card.locked h3 { color: #94a3b8; }
+        
+        .lock-badge {
+            position: absolute; top: 15px; right: 20px; font-size: 12px; font-weight: 800;
+            background: #f1f5f9; color: #64748b; padding: 4px 10px; border-radius: 6px;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+
+        /* SIGN UP & LOGIN PAGES */
+        #page-signup, #page-login {
+            display: none; flex: 1; align-items: center; justify-content: center; min-height: 100vh;
+            background: radial-gradient(circle at center, #ffffff 0%, #f1f5f9 100%);
+            padding: 40px;
+        }
+        #page-signup.active, #page-login.active { display: flex; }
+
+        .background-grid {
+            position: fixed; width: 100%; height: 100%; top: 0; left: 0;
+            background-image: linear-gradient(rgba(34, 197, 94, 0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(34, 197, 94, 0.02) 1px, transparent 1px);
+            background-size: 50px 50px; opacity: 0.9; z-index: 1; pointer-events: none;
+        }
+
+        /* UrBazaar Market Styles */
+        .ub-body { background: #f8fafc; color: #0f172a; min-height: 100vh; display: flex; flex-direction: column; }
+        .ub-topbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 32px; background: #ffffff; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); position: sticky; top: 0; z-index: 100; }
+        .ub-logo { font-size: 26px; font-weight: 900; color: #22c55e; letter-spacing: -0.5px; }
+        .ub-logo span { color: #0f172a; }
+        
+        .ub-nav { display: flex; gap: 8px; flex-wrap: wrap; }
+        .ub-nav button { background: transparent; color: #475569; border: 1px solid transparent; padding: 10px 18px; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; transition: all 0.2s ease; }
+        .ub-nav button:hover, .ub-nav button.active-nav { background: #f0fdf4; color: #22c55e; border-color: #bbf7d0; }
+        
+        .ub-right-actions { display: flex; align-items: center; gap: 14px; }
+        .ub-rating-badge { background: #f0fdf4; color: #22c55e; border: 1px solid #bbf7d0; padding: 8px 16px; border-radius: 10px; font-weight: 800; font-size: 14px; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(34, 197, 94, 0.08); }
+        .ub-rating-type { font-size: 11px; text-transform: uppercase; color: #15803d; font-weight: 900; letter-spacing: 0.5px; }
+        
+        .ub-menu-container { position: relative; }
+        .ub-vertical-menu-btn { background: #f1f5f9; border: 1px solid #cbd5e1; width: 38px; height: 38px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: pointer; }
+        .ub-vertical-menu-btn span { width: 4px; height: 4px; background: #475569; border-radius: 50%; }
+        
+        .ub-dropdown-menu { position: absolute; right: 0; top: 50px; background: white; border: 1px solid #e2e8f0; border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 240px; display: none; flex-direction: column; padding: 8px 0; z-index: 1000; }
+        .ub-dropdown-menu.show { display: flex; }
+        .ub-dropdown-item { padding: 12px 20px; font-size: 14px; font-weight: 600; color: #334155; text-decoration: none; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border: none; background: transparent; width: 100%; text-align: left; }
+        .ub-dropdown-item:hover { background: #f0fdf4; color: #22c55e; }
+        
+        .ub-page-section { display: none; flex: 1; }
+        .ub-page-section.active { display: block; }
+        
+        .ub-hero { text-align: center; padding: 50px 20px 30px; background: linear-gradient(to bottom, #ffffff, #f1f5f9); }
+        .ub-hero h1 { font-size: 40px; font-weight: 900; color: #0f172a; letter-spacing: -0.5px; }
+        .ub-hero h1 span { color: #22c55e; }
+        .ub-hero p { margin-top: 8px; font-size: 16px; color: #64748b; font-weight: 500; }
+        
+        .ub-container { max-width: 1200px; margin: 0 auto; padding: 20px 32px 50px; width: 100%; }
+        .ub-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 20px; }
+        .ub-card { min-height: 150px; background: white; border: 1px solid #e2e8f0; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 700; color: #1e293b; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02); text-align: center; padding: 20px; cursor: pointer; transition: all 0.25s ease; }
+        .ub-card:hover { transform: translateY(-4px); border-color: #22c55e; box-shadow: 0 10px 25px rgba(34, 197, 94, 0.1); color: #22c55e; }
+        
+        .ub-form-box { max-width: 600px; margin: 0 auto; background: white; border: 1px solid #e2e8f0; border-radius: 20px; padding: 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.04); }
+        .ub-input-group { margin-bottom: 20px; text-align: left; }
+        .ub-input-group label { display: block; font-size: 13px; font-weight: 800; text-transform: uppercase; color: #475569; margin-bottom: 8px; }
+        .ub-input-group input, .ub-input-group textarea, .ub-input-group select { width: 100%; padding: 14px 18px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 15px; outline: none; background: #f8fafc; color: #0f172a; transition: all 0.2s ease; }
+        .ub-input-group input:focus, .ub-input-group textarea:focus, .ub-input-group select:focus { border-color: #22c55e; background: #ffffff; }
+        .ub-submit-btn { background: #22c55e; color: white; border: none; padding: 14px; width: 100%; border-radius: 12px; font-weight: 800; font-size: 15px; cursor: pointer; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.2); transition: all 0.2s ease; }
+        .ub-submit-btn:hover { background: #16a34a; transform: translateY(-2px); }
+
+        .ub-profile-wrapper { max-width: 700px; margin: 0 auto; background: white; border: 1px solid #e2e8f0; border-radius: 20px; padding: 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.04); }
+        .ub-profile-header-flex { display: flex; align-items: center; gap: 30px; margin-bottom: 30px; }
+        .ub-profile-avatar { width: 100px; height: 100px; border-radius: 50%; background: #e2e8f0; border: 3px solid #22c55e; display: flex; align-items: center; justify-content: center; font-size: 36px; color: #22c55e; font-weight: 900; }
+        .ub-profile-info h2 { font-size: 24px; font-weight: 900; color: #0f172a; }
+        .ub-profile-info p { color: #64748b; font-size: 14px; margin-top: 4px; }
+        
+        .ub-footer-wrapper { padding: 30px 20px; background: #ffffff; border-top: 1px solid #e2e8f0; margin-top: auto; }
+        .ub-footer-box { max-width: 900px; margin: 0 auto; background: #22c55e; border-radius: 16px; padding: 24px; color: white; text-align: center; box-shadow: 0 10px 30px rgba(34, 197, 94, 0.25); }
+        .ub-footer-box h3 { font-size: 18px; font-weight: 800; }
+        
+        @media (max-width: 768px) {
+            .ub-row { grid-template-columns: repeat(2, 1fr); }
+            .ub-topbar { padding: 16px; flex-direction: column; gap: 16px; align-items: flex-start; }
+            .ub-right-actions { width: 100%; justify-content: space-between; }
+            .role-cards-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- STAGE 0: BLACK NEON INTRO SCREEN -->
+    <div class="pre-intro-screen">
+        <div class="neon-pulse-dot"></div>
+        <div class="neon-stretch-line"></div>
+    </div>
+
+    <!-- STAGE 1: CLEAN WHITE INTRO SCREEN -->
+    <div class="intro-screen">
+        <div class="ring-container">
+            <div class="outer-spinning-ring"></div>
+            <div class="inner-scanning-ring"></div>
+        </div>
+        <div class="logo-burst">
+            <h1 style="font-size: 32px; font-weight: 900; color: #0F172A; letter-spacing: -1px;">urstudios</h1>
+            <p style="font-size: 13px; font-weight: 600; color: #64748B; margin-top: 6px; letter-spacing: 1px;">URSTUDIOS PRODUCTION</p>
+        </div>
+    </div>
+
+    <!-- 100% FULLSCREEN WHITE RICKSHAW LOADING SCREEN -->
+    <div id="urbazaar-loader-overlay" style="display: none;">
+        <div id="ubLoadingTitle" class="ub-loading-heading">Ur<span>Bazaar</span></div>
+
+        <div class="ub-content-middle">
+            <div class="ub-rickshaw-container"><div class="ub-rickshaw">🛺</div></div>
+            <div id="ub-sabr-text">صبر رکھیے جناب</div>
+            <div class="ub-loader-box"><div class="ub-progress"></div></div>
+        </div>
+    </div>
+
+    <!-- ROLE SELECTION PAGE -->
+    <div id="page-role-select" class="app-view active" style="display: flex;">
+        <div class="role-selection-container">
+            <h1>Select Your <span>Role</span></h1>
+            <p>Choose how you want to experience the UrBazaar ecosystem</p>
+            
+            <div class="role-cards-grid">
+                <div class="role-card unlocked" onclick="selectRole('seller')">
+                    <h3>Seller</h3>
+                </div>
+                
+                <div class="role-card locked" onclick="alert('This role is currently locked.')">
+                    <div class="lock-badge">Locked</div>
+                    <h3>Buyer</h3>
+                </div>
+                
+                <div class="role-card locked" onclick="alert('This role is currently locked.')">
+                    <div class="lock-badge">Locked</div>
+                    <h3>Rider</h3>
+                </div>
+                
+                <div class="role-card locked" onclick="alert('This role is currently locked.')">
+                    <div class="lock-badge">Locked</div>
+                    <h3>Member</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SIGN UP PAGE -->
+    <div id="page-signup" class="app-view">
+        <div class="ub-form-box" style="max-width: 600px; width: 100%; text-align: center; position: relative; z-index: 2;">
+            <h1 style="font-size: 32px; font-weight: 900; color: #0f172a; margin-bottom: 8px;">Seller <span>Sign Up</span></h1>
+            <p style="font-size: 15px; color: #64748b; margin-bottom: 30px;">Enter your details to create your merchant account</p>
+            
+            <form onsubmit="handleSignup(event)">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="ub-input-group">
+                        <label>Full Name</label>
+                        <input type="text" id="signupName" placeholder="e.g. Hussain" required>
+                    </div>
+                    <div class="ub-input-group">
+                        <label>Store Name</label>
+                        <input type="text" id="signupStore" placeholder="e.g. Hussain Store" required>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="ub-input-group">
+                        <label>Email Address</label>
+                        <input type="email" id="signupEmail" placeholder="merchant@urbazar.com" required>
+                    </div>
+                    <div class="ub-input-group">
+                        <label>Password</label>
+                        <input type="password" id="signupPassword" placeholder="••••••••" required>
+                    </div>
+                </div>
+
+                <div class="ub-input-group">
+                    <label>Home / Store Address</label>
+                    <input type="text" id="signupAddress" placeholder="e.g. House #123, Street #4, Near Market" required>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="ub-input-group">
+                        <label>City Name</label>
+                        <input type="text" id="signupCity" placeholder="e.g. Lahore" required>
+                    </div>
+                    <div class="ub-input-group">
+                        <label>Postal Code</label>
+                        <input type="text" id="signupPostalCode" placeholder="e.g. 54000" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="ub-submit-btn" style="margin-top: 10px;" id="signupBtn">Complete Sign Up</button>
+            </form>
+
+            <div style="margin-top: 24px; font-size: 14px; color: #64748b; font-weight: 500;">
+                Already have an account? <span onclick="switchToLogin()" style="color: #22c55e; font-weight: 700; cursor: pointer;">Login here</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOGIN PAGE -->
+    <div id="page-login" class="app-view">
+        <div class="ub-form-box" style="max-width: 480px; width: 100%; text-align: center; position: relative; z-index: 2;">
+            <h1 style="font-size: 32px; font-weight: 900; color: #0f172a; margin-bottom: 8px;">Merchant <span>Login</span></h1>
+            <p style="font-size: 15px; color: #64748b; margin-bottom: 30px;">Access your UrBazaar seller dashboard</p>
+            
+            <form onsubmit="handleLogin(event)">
+                <div class="ub-input-group">
+                    <label>Email Address</label>
+                    <input type="email" id="loginEmail" placeholder="merchant@urbazar.com" required>
+                </div>
+                
+                <div class="ub-input-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" placeholder="••••••••" required>
+                </div>
+
+                <button type="submit" class="ub-submit-btn" style="margin-top: 10px;" id="loginBtn">Login to Dashboard</button>
+            </form>
+
+            <div style="margin-top: 24px; font-size: 14px; color: #64748b; font-weight: 500;">
+                Don't have an account? <span onclick="switchToSignup()" style="color: #22c55e; font-weight: 700; cursor: pointer;">Sign up here</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="background-grid"></div>
+
+    <!-- SELLER DASHBOARD APPLICATION -->
+    <div id="urbazaar-main-app" class="app-view">
+        <div class="ub-body" style="flex: 1; display: flex; flex-direction: column;">
+            <div class="ub-topbar">
+                <div class="ub-logo">UrBazar<span>.</span></div>
+                
+                <div class="ub-nav">
+                    <button id="ub-btn-home" onclick="showUbSection('ub-home')" class="active-nav">Home</button>
+                    <button id="ub-btn-cart" onclick="showUbSection('ub-cart')">Cart</button>
+                    <button id="ub-btn-deals" onclick="showUbSection('ub-deals')">Deals</button>
+                    <button id="ub-btn-profile" onclick="showUbSection('ub-profile')">Profile</button>
+                </div>
+
+                <div class="ub-right-actions">
+                    <div class="ub-rating-badge">
+                        <span class="ub-rating-type">Seller</span> 4.9
+                    </div>
+
+                    <div class="ub-menu-container">
+                        <div class="ub-vertical-menu-btn" onclick="toggleUbMenu(event)" title="Account Quick Menu">
+                            <span></span><span></span><span></span>
+                        </div>
+                        
+                        <div id="ubAccountDropdown" class="ub-dropdown-menu">
+                            <button class="ub-dropdown-item" onclick="showUbSection('ub-analytics')">Store Analytics <span>→</span></button>
+                            <button class="ub-dropdown-item" onclick="showUbSection('ub-orders')">Pending Orders <span>→</span></button>
+                            <button class="ub-dropdown-item" onclick="showUbSection('ub-wallet')">Payouts &amp; Wallet <span>→</span></button>
+                            <button class="ub-dropdown-item" onclick="showUbSection('ub-settings')">Store Settings <span>→</span></button>
+                            <button class="ub-dropdown-item" style="color: #22c55e; font-weight: 700;" onclick="handleLogout()">Logout / Switch Role <span>→</span></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 1. HOME MAIN SECTION -->
+            <div id="ub-home" class="ub-page-section active">
+                <div class="ub-hero">
+                    <h1>Seller <span>Dashboard</span></h1>
+                    <p>Manage your inventory, track revenue, and fulfill orders smoothly.</p>
+                </div>
+
+                <div class="ub-container">
+                    <div class="ub-row">
+                        <div class="ub-card" onclick="showUbSection('ub-wallet')">Total Revenue<br><br><span style="font-size: 20px; font-weight: 900; color: #22c55e;" id="homeRevenueCount">PKR 0</span></div>
+                        <div class="ub-card" onclick="showUbSection('ub-products')">Active Products<br><br><span style="font-size: 20px; font-weight: 900; color: #0f172a;" id="homeProductCount">0 Items</span></div>
+                        <div class="ub-card" onclick="showUbSection('ub-orders')">Pending Orders<br><br><span style="font-size: 20px; font-weight: 900; color: #f59e0b;" id="homeOrderCount">0 Orders</span></div>
+                        <div class="ub-card" onclick="showUbSection('ub-analytics')">Store Rating<br><br><span style="font-size: 20px; font-weight: 900; color: #22c55e;">4.9 / 5.0</span></div>
+                    </div>
+                    <div class="ub-row">
+                        <div class="ub-card" onclick="showUbSection('ub-add')">Quick Add Product</div>
+                        <div class="ub-card" onclick="showUbSection('ub-products')">Manage Inventory</div>
+                        <div class="ub-card" onclick="showUbSection('ub-orders')">View Recent Orders</div>
+                        <div class="ub-card" onclick="showUbSection('ub-settings')">Store Settings</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ADD PRODUCT SUB-PAGE -->
+            <div id="ub-add" class="ub-page-section">
+                <div class="ub-hero">
+                    <h1>Add New <span>Product</span></h1>
+                    <p>List a new item with image and video on your UrBazaar store catalog</p>
+                </div>
+
+                <div class="ub-container">
+                    <div class="ub-form-box">
+                        <form onsubmit="handlePublishProduct(event)">
+                            <div class="ub-input-group">
+                                <label>Product Title</label>
+                                <input type="text" id="prodTitle" placeholder="e.g. Wireless Bluetooth Earbuds" required>
+                            </div>
+                            <div class="ub-input-group">
+                                <label>Category</label>
+                                <input type="text" id="prodCategory" placeholder="e.g. Electronics / Accessories" required>
+                            </div>
+                            <div class="ub-input-group">
+                                <label>Price (PKR)</label>
+                                <input type="number" id="prodPrice" placeholder="e.g. 2999" required>
+                            </div>
+                            <div class="ub-input-group">
+                                <label>Stock Quantity</label>
+                                <input type="number" id="prodStock" placeholder="e.g. 50" required>
+                            </div>
+                            <div class="ub-input-group">
+                                <label>Product Image</label>
+                                <input type="file" id="prodImageFile" accept="image/*">
+                            </div>
+                            <div class="ub-input-group">
+                                <label>Product Video (Optional)</label>
+                                <input type="file" id="prodVideoFile" accept="video/*">
+                            </div>
+                            <div class="ub-input-group">
+                                <label>Description</label>
+                                <textarea id="prodDesc" rows="4" placeholder="Enter product specifications and details..." required></textarea>
+                            </div>
+                            <button type="submit" class="ub-submit-btn" id="pubProdBtn">Publish Product</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MY PRODUCTS TAB -->
+            <div id="ub-products" class="ub-page-section">
+                <div class="ub-hero">
+                    <h1>My <span>Products</span></h1>
+                    <p>Overview of your store inventory from Express Backend</p>
+                </div>
+
+                <div class="ub-container">
+                    <div class="ub-row" id="inventoryGrid">
+                        <div class="ub-card" style="grid-column: span 4; color: #64748b;">Loading inventory from backend...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CART TAB -->
+            <div id="ub-cart" class="ub-page-section">
+                <div class="ub-hero">
+                    <h1>Publish <span>Items</span></h1>
+                    <p>Review and publish your inventory items</p>
+                </div>
+                <div class="ub-container">
+                    <div class="ub-row" id="cartItemsGrid">
+                        <div class="ub-card" style="grid-column: span 4; color: #64748b;">No items in queue.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DEALS TAB -->
+            <div id="ub-deals" class="ub-page-section">
+                <div class="ub-hero">
+                    <h1>Create <span>Deals</span></h1>
+                </div>
+                <div class="ub-container">
+                    <div class="ub-form-box">
+                        <form onsubmit="handleCreateDeal(event)">
+                            <div class="ub-input-group">
+                                <label>Deal Title</label>
+                                <input type="text" id="dealTitle" placeholder="Flash Sale" required>
+                            </div>
+                            <div class="ub-input-group">
+                                <label>Price</label>
+                                <input type="number" id="dealPrice" placeholder="2199" required>
+                            </div>
+                            <button type="submit" class="ub-submit-btn">Publish Deal</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ORDERS TAB -->
+            <div id="ub-orders" class="ub-page-section">
+                <div class="ub-hero">
+                    <h1>Pending <span>Orders</span></h1>
+                    <p>Customer orders requiring fulfillment</p>
+                </div>
+                <div class="ub-container">
+                    <div class="ub-row" id="ordersGrid">
+                        <div class="ub-card" style="grid-column: span 4; color: #64748b;">No pending orders found.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WALLET TAB -->
+            <div id="ub-wallet" class="ub-page-section">
+                <div class="ub-hero">
+                    <h1>Payouts &amp; <span>Wallet</span></h1>
+                    <p>Your store revenue and balance breakdown</p>
+                </div>
+                <div class="ub-container">
+                    <div class="ub-form-box" style="text-align: center;">
+                        <h3 style="font-size: 16px; color: #64748b;">Available Balance</h3>
+                        <h1 style="font-size: 38px; color: #22c55e; margin: 10px 0;" id="walletBalance">PKR 0</h1>
+                        <p style="font-size: 14px; color: #94a3b8;">All accounts start with zero balance upon initial sign up.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PROFILE TAB -->
+            <div id="ub-profile" class="ub-page-section">
+                <div class="ub-container">
+                    <div class="ub-profile-wrapper">
+                        <div class="ub-profile-header-flex">
+                            <div class="ub-profile-avatar" id="profileAvatarText">H</div>
+                            <div class="ub-profile-info">
+                                <h2 id="profileStoreName">Hussain Store</h2>
+                                <p id="profileUserHandle">@hussain_store • Verified Merchant</p>
+                                <p id="profileLocation" style="font-size: 13px; color: #94a3b8; margin-top: 2px;"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FOOTER -->
+            <div class="ub-footer-wrapper">
+                <div class="ub-footer-box">
+                    <h3>Seller Dashboard © 2026</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- EXPRESS BACKEND API CONTROLLERS WITH FULL CART & ORDERS INTEGRATION -->
+    <script>
+        const API_BASE_URL = 'http://localhost:5000/api';
+
+        // Rickshaw Loader Logic
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const overlay = document.getElementById('urbazaar-loader-overlay');
+                overlay.style.display = 'flex';
+
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                    
+                    // Check if token exists in localStorage
+                    const token = localStorage.getItem('auth-token');
+                    if (token) {
+                        setupDashboardProfile("Hussain Store", "Main Boulevard", "Lahore", "54000");
+                        loadProductsFromBackend();
+                    } else {
+                        const roleSelectPage = document.getElementById('page-role-select');
+                        roleSelectPage.style.display = 'flex';
+                        roleSelectPage.classList.add('active');
+                    }
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }, 3600);
+            }, 6800);
+        });
+
+        function selectRole(role) {
+            document.getElementById('page-role-select').style.display = 'none';
+            document.getElementById('page-role-select').classList.remove('active');
+            
+            const signupPage = document.getElementById('page-signup');
+            signupPage.style.display = 'flex';
+            signupPage.classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function switchToLogin() {
+            document.getElementById('page-signup').style.display = 'none';
+            document.getElementById('page-signup').classList.remove('active');
+            
+            const loginPage = document.getElementById('page-login');
+            loginPage.style.display = 'flex';
+            loginPage.classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function switchToSignup() {
+            document.getElementById('page-login').style.display = 'none';
+            document.getElementById('page-login').classList.remove('active');
+            
+            const signupPage = document.getElementById('page-signup');
+            signupPage.style.display = 'flex';
+            signupPage.classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Backend Signup API Integration
+        async function handleSignup(event) {
+            event.preventDefault();
+            const name = document.getElementById('signupName').value;
+            const store = document.getElementById('signupStore').value;
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+            const address = document.getElementById('signupAddress').value;
+            const city = document.getElementById('signupCity').value;
+            const postalCode = document.getElementById('signupPostalCode').value;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/signup`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, store, email, password, address, city, postalCode })
+                });
+                const data = await response.json();
+
+                if (response.ok && data.token) {
+                    localStorage.setItem('auth-token', data.token);
+                    setupDashboardProfile(store, address, city, postalCode);
+                    loadProductsFromBackend();
+                } else {
+                    alert("Signup failed: " + (data.message || "Unknown error"));
+                }
+            } catch (error) {
+                console.error("Signup error: ", error);
+                alert("Connection error or server offline.");
+            }
+        }
+
+        // Backend Login API Integration
+        async function handleLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const loginBtn = document.getElementById('loginBtn');
+
+            loginBtn.innerText = "Authenticating...";
+            loginBtn.disabled = true;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await response.json();
+
+                if (response.ok && data.token) {
+                    localStorage.setItem('auth-token', data.token);
+                    setupDashboardProfile("Hussain Store", "", "", "");
+                    loadProductsFromBackend();
+                } else {
+                    alert("Login failed: " + (data.message || "Invalid credentials"));
+                    loginBtn.innerText = "Login to Dashboard";
+                    loginBtn.disabled = false;
+                }
+            } catch (error) {
+                console.error("Login error: ", error);
+                alert("Connection error or backend server offline.");
+                loginBtn.innerText = "Login to Dashboard";
+                loginBtn.disabled = false;
+            }
+        }
+
+        function setupDashboardProfile(store, address, city, postalCode) {
+            document.getElementById('profileStoreName').innerText = store;
+            document.getElementById('profileUserHandle').innerText = '@' + store.toLowerCase().replace(/\s+/g, '_') + ' • Verified Merchant';
+            document.getElementById('profileLocation').innerText = address ? '📍 ' + address + ', ' + city + ' (' + postalCode + ')' : '';
+            document.getElementById('profileAvatarText').innerText = store.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+
+            document.getElementById('page-signup').style.display = 'none';
+            document.getElementById('page-signup').classList.remove('active');
+            document.getElementById('page-login').style.display = 'none';
+            document.getElementById('page-login').classList.remove('active');
+            
+            document.getElementById('urbazaar-main-app').classList.add('active-view');
+            showUbSection('ub-home');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function handleLogout() {
+            localStorage.removeItem('auth-token');
+            document.getElementById('urbazaar-main-app').classList.remove('active-view');
+            const roleSelectPage = document.getElementById('page-role-select');
+            roleSelectPage.style.display = 'flex';
+            roleSelectPage.classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Fetch Products from Express Backend
+        async function loadProductsFromBackend() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/products/all`);
+                const products = await response.json();
+
+                const inventoryGrid = document.getElementById('inventoryGrid');
+                const homeProductCount = document.getElementById('homeProductCount');
+
+                if (!products || products.length === 0) {
+                    inventoryGrid.innerHTML = `<div class="ub-card" style="grid-column: span 4; color: #64748b;">No products found in backend database.</div>`;
+                    homeProductCount.innerText = "0 Items";
+                    return;
+                }
+
+                let cardsHtml = '';
+                products.forEach((prod) => {
+                    cardsHtml += `
+                        <div class="ub-card" style="display: flex; flex-direction: column; gap: 8px;">
+                            ${prod.imageUrl ? `<img src="${prod.imageUrl}" alt="${prod.title}" style="width: 100%; height: 90px; object-fit: cover; border-radius: 8px;">` : ''}
+                            <strong style="font-size: 15px; color: #0f172a;">${prod.title}</strong>
+                            <span style="font-weight: normal; color: #22c55e; font-size: 13px;">Stock: ${prod.stock} • PKR ${prod.price.toLocaleString()}</span>
+                        </div>
+                    `;
+                });
+
+                inventoryGrid.innerHTML = cardsHtml;
+                homeProductCount.innerText = products.length + (products.length === 1 ? " Item" : " Items");
+            } catch (err) {
+                console.error("Error fetching products:", err);
+                document.getElementById('inventoryGrid').innerHTML = `<div class="ub-card" style="grid-column: span 4; color: #ef4444;">Failed to connect to backend server.</div>`;
+            }
+        }
+
+        // Fetch Cart Items from Express Backend
+        async function loadCartFromBackend() {
+            const token = localStorage.getItem('auth-token');
+            const cartGrid = document.getElementById('cartItemsGrid');
+            if (!token) return;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/cart`, {
+                    headers: { 'auth-token': token }
+                });
+                const cartItems = await response.json();
+
+                if (!cartItems || cartItems.length === 0) {
+                    cartGrid.innerHTML = `<div class="ub-card" style="grid-column: span 4; color: #64748b;">No items in queue.</div>`;
+                    return;
+                }
+
+                let html = '';
+                cartItems.forEach(item => {
+                    html += `
+                        <div class="ub-card">
+                            <strong style="font-size: 15px; color: #0f172a;">${item.title || 'Cart Item'}</strong>
+                            <span style="font-weight: normal; color: #22c55e; font-size: 13px;">Quantity: ${item.quantity || 1}</span>
+                        </div>
+                    `;
+                });
+                cartGrid.innerHTML = html;
+            } catch (err) {
+                console.error("Error loading cart:", err);
+            }
+        }
+
+        // Fetch Pending Orders from Express Backend
+        async function loadOrdersFromBackend() {
+            const token = localStorage.getItem('auth-token');
+            const ordersGrid = document.getElementById('ordersGrid');
+            const homeOrderCount = document.getElementById('homeOrderCount');
+            const homeRevenueCount = document.getElementById('homeRevenueCount');
+            const walletBalance = document.getElementById('walletBalance');
+
+            if (!token) return;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/orders`, {
+                    headers: { 'auth-token': token }
+                });
+                const orders = await response.json();
+
+                if (!orders || orders.length === 0) {
+                    ordersGrid.innerHTML = `<div class="ub-card" style="grid-column: span 4; color: #64748b;">No pending orders found.</div>`;
+                    homeOrderCount.innerText = "0 Orders";
+                    return;
+                }
+
+                let totalRev = 0;
+                let html = '';
+                orders.forEach(ord => {
+                    const amt = ord.totalAmount || ord.price || 0;
+                    totalRev += amt;
+                    html += `
+                        <div class="ub-card">
+                            <strong>Order #${(ord._id || '').substring(0, 6)}</strong><br>
+                            <span style="color: #22c55e;">PKR ${amt.toLocaleString()}</span>
+                        </div>
+                    `;
+                });
+
+                ordersGrid.innerHTML = html;
+                homeOrderCount.innerText = orders.length + " Orders";
+                homeRevenueCount.innerText = "PKR " + totalRev.toLocaleString();
+                walletBalance.innerText = "PKR " + totalRev.toLocaleString();
+            } catch (err) {
+                console.error("Error loading orders:", err);
+            }
+        }
+
+        // Publish Product with FormData and Token Header (Image & Video Upload Support)
+        async function handlePublishProduct(event) {
+            event.preventDefault();
+            const token = localStorage.getItem('auth-token');
+            if (!token) {
+                alert("Unauthorized. Please log in first.");
+                return;
+            }
+
+            const title = document.getElementById('prodTitle').value;
+            const category = document.getElementById('prodCategory').value;
+            const price = document.getElementById('prodPrice').value;
+            const stock = document.getElementById('prodStock').value;
+            const description = document.getElementById('prodDesc').value;
+
+            // File inputs check
+            const imageFile = document.getElementById('prodImageFile').files[0];
+            const videoFile = document.getElementById('prodVideoFile').files[0];
+
+            const publishBtn = document.getElementById('pubProdBtn');
+            publishBtn.innerText = "Uploading & Publishing...";
+            publishBtn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('title', title);
+            formData.append('category', category);
+            formData.append('price', price);
+            formData.append('stock', stock);
+            formData.append('description', description);
+
+            if (imageFile) formData.append('image', imageFile);
+            if (videoFile) formData.append('video', videoFile);
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/products/add`, {
+                    method: 'POST',
+                    headers: {
+                        'auth-token': token
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    alert('Product, Image & Video published successfully!');
+                    event.target.reset();
+                    loadProductsFromBackend();
+                    showUbSection('ub-products');
+                } else {
+                    alert('Error: ' + (result.message || 'Failed to publish'));
+                }
+            } catch (error) {
+                console.error("Error publishing product: ", error);
+                alert('Network error while publishing product.');
+            } finally {
+                publishBtn.innerText = "Publish Product";
+                publishBtn.disabled = false;
+            }
+        }
+
+        function handleCreateDeal(event) {
+            event.preventDefault();
+            alert('Custom deal published live successfully!');
+            showUbSection('ub-deals');
+        }
+
+        function showUbSection(sectionId) {
+            let sections = document.querySelectorAll(".ub-page-section");
+            sections.forEach(s => s.classList.remove("active"));
+
+            let navButtons = document.querySelectorAll(".ub-nav button");
+            navButtons.forEach(btn => btn.classList.remove("active-nav"));
+
+            let targetSection = document.getElementById(sectionId);
+            if(targetSection) {
+                targetSection.classList.add("active");
+            }
+            
+            let btnId = sectionId.replace('ub-', 'ub-btn-');
+            let targetBtn = document.getElementById(btnId);
+            if(targetBtn) {
+                targetBtn.classList.add("active-nav");
+            }
+
+            // Automatically load data when navigating to specific sections
+            if (sectionId === 'ub-cart') {
+                loadCartFromBackend();
+            } else if (sectionId === 'ub-orders') {
+                loadOrdersFromBackend();
+            } else if (sectionId === 'ub-products') {
+                loadProductsFromBackend();
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function toggleUbMenu(event) {
+            event.stopPropagation();
+            const dropdown = document.getElementById("ubAccountDropdown");
+            if(dropdown) dropdown.classList.toggle("show");
+        }
+    </script>
+
+</body>
+</html>
