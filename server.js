@@ -9,9 +9,9 @@ app.use(cors());
 
 // Import Routes
 const authRoute = require('./routes/auth');
-const productRoute = require('./routes/product');
-const cartRoute = require('./routes/cart');
-const orderRoute = require('./routes/order');
+const productRoute = require('./routes/Product');
+const cartRoute = require('./routes/Cart');
+const orderRoute = require('./routes/Order');
 
 // Use Routes
 app.use('/api/auth', authRoute);
